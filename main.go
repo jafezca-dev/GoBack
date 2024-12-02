@@ -1,8 +1,28 @@
 package main
 
 import (
+	"fmt"
 	"os"
 )
+
+func getParameters(commandParams []string) ProgParams {
+	progParams := ProgParams{}
+
+	for index, param := range commandParams {
+		switch param {
+		case "-b":
+			progParams.Bucket = commandParams[index+1]
+		case "-ep":
+			progParams.Endpoint = commandParams[index+1]
+		case "-ak":
+			progParams.AccessKey = commandParams[index+1]
+		case "-sk":
+			progParams.SecretKey = commandParams[index+1]
+		}
+	}
+
+	return progParams
+}
 
 func getFiles(path string, files *[]FileDiff) {
 	content, _ := os.ReadDir(path)
@@ -21,6 +41,10 @@ func getFiles(path string, files *[]FileDiff) {
 }
 
 func main() {
+	commandParams := os.Args[1:]
+	progParams := getParameters(commandParams)
+	fmt.Println(progParams)
+
 	var files []FileDiff
 
 	const BasePath = "C:\\Users\\Javi\\Documents\\Isos"
