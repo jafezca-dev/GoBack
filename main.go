@@ -3,7 +3,9 @@ package main
 import (
 	"GoBack/clients"
 	"GoBack/progparams"
+	"fmt"
 	"os"
+	"time"
 )
 
 func getParameters(commandParams []string) progparams.ProgParams {
@@ -49,6 +51,8 @@ func getFiles(path string, files *[]FileDiff) {
 }
 
 func main() {
+	backupDate := time.Now().Format("2006_01_02_15_04_05")
+	fmt.Println(backupDate)
 	commandParams := os.Args[1:]
 	progParams := getParameters(commandParams)
 
@@ -61,11 +65,13 @@ func main() {
 
 	getFiles(BasePath, &files)
 
-	//diffs := map[string]FileDiff{}
+	diffs := map[string]FileDiff{}
 
-	//for _, file := range files {
-	//	_, fileName := file.DirPaths(BasePath)
-	//
-	//	diffs[fileName] = file
-	//}
+	for _, file := range files {
+		_, fileName := file.DirPaths(BasePath)
+
+		diffs[fileName] = file
+	}
+
+	fmt.Println(diffs)
 }

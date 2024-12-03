@@ -6,11 +6,13 @@ import (
 )
 
 type FileDiff struct {
-	OldFile, NewFile os.DirEntry
-	FullDirPath      string
+	OldFile     *FileChanges
+	NewFile     os.DirEntry
+	FullDirPath string
 }
 
 func (diff *FileDiff) IsValid() bool {
+	//fmt.Println(diff.OldFile)
 	if diff.OldFile == nil {
 		return false
 	}
@@ -18,8 +20,6 @@ func (diff *FileDiff) IsValid() bool {
 	if diff.NewFile == nil {
 		return false
 	}
-
-	//if not new file => panic
 
 	return true
 }
@@ -29,14 +29,13 @@ func (diff *FileDiff) IsDiff() bool {
 		return true
 	}
 
-	oldInfo, oldInfoError := diff.OldFile.Info()
 	newInfo, newInfoError := diff.NewFile.Info()
 
-	if oldInfoError != nil || newInfoError != nil {
+	if newInfoError != nil {
 		return true
 	}
 
-	if oldInfo.ModTime() != newInfo.ModTime() {
+	if diff.OldFile.ModTime.Format("2006-01-02 15:04:05") != newInfo.ModTime().Format("2006-01-02 15:04:05") {
 		return true
 	}
 
