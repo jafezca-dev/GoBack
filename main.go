@@ -2,17 +2,18 @@ package main
 
 import (
 	"GoBack/clients"
-	"GoBack/progparams"
-	"fmt"
+	"GoBack/types"
 	"os"
 	"time"
 )
 
-func getParameters(commandParams []string) progparams.ProgParams {
-	progParams := progparams.ProgParams{}
+func getParameters(commandParams []string) types.ProgParams {
+	progParams := types.ProgParams{}
 
 	for index, param := range commandParams {
 		switch param {
+		case "-p":
+			progParams.BasePath = commandParams[index+1]
 		case "-sc":
 			progParams.StorageClient = commandParams[index+1]
 		case "-b":
@@ -26,10 +27,12 @@ func getParameters(commandParams []string) progparams.ProgParams {
 		}
 	}
 
+	progParams.BackupDate = time.Now().Format("2006_01_02_15_04_05")
+
 	return progParams
 }
 
-func getStorageClient(progParams progparams.ProgParams) clients.StorageClient {
+func getStorageClient(progParams types.ProgParams) clients.StorageClient {
 	switch progParams.StorageClient {
 	case "minio":
 		return clients.NewMinioClient(progParams)
@@ -38,40 +41,38 @@ func getStorageClient(progParams progparams.ProgParams) clients.StorageClient {
 	panic("No client selected")
 }
 
-func getFiles(path string, files *[]FileDiff) {
+func getFiles(path string, files *[]types.FileDiff) {
 	content, _ := os.ReadDir(path)
 
 	for _, file := range content {
 		if file.IsDir() {
 			getFiles(path+"\\"+file.Name(), files)
 		} else {
-			*files = append(*files, FileDiff{NewFile: file, FullDirPath: path})
+			*files = append(*files, types.FileDiff{NewFile: file, FullDirPath: path})
 		}
 	}
 }
 
 func main() {
-	backupDate := time.Now().Format("2006_01_02_15_04_05")
-	fmt.Println(backupDate)
+
+	//fmt.Println(backupDate)
 	commandParams := os.Args[1:]
 	progParams := getParameters(commandParams)
 
 	storageClient := getStorageClient(progParams)
 	storageClient.CheckBucketConnection()
 
-	var files []FileDiff
+	var files []types.FileDiff
 
-	const BasePath = "C:\\Users\\Javi\\Documents\\Isos"
+	//const BasePath = "C:\\Users\\Javi\\Documents\\Isos"
 
-	getFiles(BasePath, &files)
+	getFiles(progParams.BasePath, &files)
 
-	diffs := map[string]FileDiff{}
+	//diffs := map[string]FileDiff{}
 
 	for _, file := range files {
-		_, fileName := file.DirPaths(BasePath)
-
-		diffs[fileName] = file
+		storageClient.UploadFile(progParams, file)
 	}
 
-	fmt.Println(diffs)
+	//fmt.Println(diffs)
 }

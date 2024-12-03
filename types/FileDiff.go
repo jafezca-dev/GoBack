@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"os"
@@ -42,6 +42,10 @@ func (diff *FileDiff) IsDiff() bool {
 	return false
 }
 
+func (diff *FileDiff) FullPath() string {
+	return diff.FullDirPath + "\\" + diff.NewFile.Name()
+}
+
 func (diff *FileDiff) DirPaths(basePath string) (string, string) {
 	//if diff.NewFile == nil {
 	//	return false
@@ -49,6 +53,9 @@ func (diff *FileDiff) DirPaths(basePath string) (string, string) {
 
 	parsedDirPath := strings.Replace(diff.FullDirPath, basePath, "", 1)
 	parsedFilePath := parsedDirPath + "\\" + diff.NewFile.Name()
+	if parsedDirPath == "" {
+		parsedDirPath = "\\"
+	}
 
 	return parsedDirPath, parsedFilePath
 }
