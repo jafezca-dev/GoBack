@@ -7,7 +7,7 @@ import (
 
 type StorageClient interface {
 	CheckBucketConnection() bool
-	UploadFile(progParams types.ProgParams, fileDiff types.FileDiff) bool
+	UploadFile(fileDiff types.FileDiff) bool
 	UploadCsv(backupInfo bytes.Buffer) bool
 	GetLastChanges() (map[string]types.FileChanges, error)
 }

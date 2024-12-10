@@ -45,13 +45,13 @@ func (mc *MinioClient) CheckBucketConnection() bool {
 	return true
 }
 
-func (mc *MinioClient) UploadFile(progParams types.ProgParams, fileDiff types.FileDiff) bool {
+func (mc *MinioClient) UploadFile(fileDiff types.FileDiff) bool {
 	if !fileDiff.IsDiff() {
 		return false
 	}
 
-	_, virtualFilePath := fileDiff.DirPaths(progParams.BasePath)
-	bucketPath := progParams.BackupDate + virtualFilePath
+	_, virtualFilePath := fileDiff.DirPaths(mc.ProgParams.BasePath)
+	bucketPath := mc.ProgParams.BackupDate + virtualFilePath
 	bucketPath = strings.ReplaceAll(bucketPath, "\\", "/")
 	fmt.Println(bucketPath)
 	contentType := "text/plain"
