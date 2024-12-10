@@ -59,3 +59,16 @@ func (diff *FileDiff) DirPaths(basePath string) (string, string) {
 
 	return parsedDirPath, parsedFilePath
 }
+
+func (diff *FileDiff) GetCsvReg(progParams ProgParams) string {
+	_, virtualFilePath := diff.DirPaths(progParams.BasePath)
+	virtualFilePath = strings.ReplaceAll(virtualFilePath, "\\", "/")
+
+	info, _ := diff.NewFile.Info()
+
+	if diff.IsDiff() {
+		return virtualFilePath + ";" + info.ModTime().Format("2006-01-02 15:04:05") + ";" + progParams.BackupDate
+	}
+
+	return ""
+}

@@ -3,6 +3,7 @@ package main
 import (
 	"GoBack/clients"
 	"GoBack/types"
+	"bytes"
 	"os"
 	"time"
 )
@@ -54,8 +55,6 @@ func getFiles(path string, files *[]types.FileDiff) {
 }
 
 func main() {
-
-	//fmt.Println(backupDate)
 	commandParams := os.Args[1:]
 	progParams := getParameters(commandParams)
 
@@ -64,15 +63,21 @@ func main() {
 
 	var files []types.FileDiff
 
-	//const BasePath = "C:\\Users\\Javi\\Documents\\Isos"
-
 	getFiles(progParams.BasePath, &files)
 
-	//diffs := map[string]FileDiff{}
+	var csvBuffer bytes.Buffer
 
 	for _, file := range files {
-		storageClient.UploadFile(progParams, file)
+		//storageClient.UploadFile(progParams, file)
+
+		csvLine := file.GetCsvReg(progParams)
+
+		// Escribir la línea en el buffer
+		_, err := csvBuffer.WriteString(csvLine + "\n")
+		if err != nil {
+			panic("Error CSV")
+		}
 	}
 
-	//fmt.Println(diffs)
+	storageClient.UploadCsv(csvBuffer)
 }

@@ -2,13 +2,15 @@ package clients
 
 import (
 	"GoBack/types"
+	"bytes"
 	"context"
 	"fmt"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 type MinioClient struct {
@@ -54,10 +56,19 @@ func (mc *MinioClient) UploadFile(progParams types.ProgParams, fileDiff types.Fi
 	}
 	defer file.Close()
 
-	info, err := mc.client.PutObject(context.Background(), mc.ProgParams.Bucket, bucketPath, file, -1, minio.PutObjectOptions{
+	_, err = mc.client.PutObject(context.Background(), mc.ProgParams.Bucket, bucketPath, file, -1, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 
-	fmt.Println(info)
+	// fmt.Println(info)
+	return true
+}
+
+func (mc *MinioClient) UploadCsv(backupInfo bytes.Buffer) bool {
+	_, _ = mc.client.PutObject(context.Background(), mc.ProgParams.Bucket, "/backup_data/"+mc.ProgParams.BackupDate+".csv",
+		bytes.NewReader(backupInfo.Bytes()), int64(backupInfo.Len()), minio.PutObjectOptions{
+			ContentType: "text/csv",
+		})
+
 	return true
 }
