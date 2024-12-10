@@ -4,6 +4,7 @@ import (
 	"GoBack/clients"
 	"GoBack/types"
 	"bytes"
+	"fmt"
 	"os"
 	"time"
 )
@@ -54,6 +55,19 @@ func getFiles(path string, files *[]types.FileDiff) {
 	}
 }
 
+func addOldFiles(progParams types.ProgParams, storageClient clients.StorageClient, files *[]types.FileDiff) {
+	oldDataList, err := storageClient.GetLastChanges()
+	if err == nil {
+		for index, file := range *files {
+			_, virtualFilePath := file.DirPaths(progParams.BasePath)
+			fileOldData, exists := oldDataList[virtualFilePath]
+			if exists {
+				(*files)[index].OldFile = &fileOldData
+			}
+		}
+	}
+}
+
 func main() {
 	commandParams := os.Args[1:]
 	progParams := getParameters(commandParams)
@@ -63,14 +77,16 @@ func main() {
 
 	var files []types.FileDiff
 
-	_, _ = storageClient.GetLastChanges()
-	//fmt.Println("Last Changes:", changeData)
-
 	getFiles(progParams.BasePath, &files)
+
+	if true {
+		addOldFiles(progParams, storageClient, &files)
+	}
 
 	var csvBuffer bytes.Buffer
 
 	for _, file := range files {
+		fmt.Println(file.OldFile)
 		//storageClient.UploadFile(progParams, file)
 
 		csvLine := file.GetCsvReg(progParams)

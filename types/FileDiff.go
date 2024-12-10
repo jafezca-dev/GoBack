@@ -43,18 +43,18 @@ func (diff *FileDiff) IsDiff() bool {
 }
 
 func (diff *FileDiff) FullPath() string {
-	return diff.FullDirPath + "\\" + diff.NewFile.Name()
+	fullPath := diff.FullDirPath + "/" + diff.NewFile.Name()
+	fullPath = strings.ReplaceAll(fullPath, "\\", "/")
+	return fullPath
 }
 
 func (diff *FileDiff) DirPaths(basePath string) (string, string) {
-	//if diff.NewFile == nil {
-	//	return false
-	//}
-
 	parsedDirPath := strings.Replace(diff.FullDirPath, basePath, "", 1)
-	parsedFilePath := parsedDirPath + "\\" + diff.NewFile.Name()
+	parsedDirPath = strings.ReplaceAll(parsedDirPath, "\\", "/")
+	parsedFilePath := parsedDirPath + "/" + diff.NewFile.Name()
+	parsedFilePath = strings.ReplaceAll(parsedFilePath, "\\", "/")
 	if parsedDirPath == "" {
-		parsedDirPath = "\\"
+		parsedDirPath = "/"
 	}
 
 	return parsedDirPath, parsedFilePath
@@ -70,5 +70,5 @@ func (diff *FileDiff) GetCsvReg(progParams ProgParams) string {
 		return virtualFilePath + ";" + info.ModTime().Format("2006-01-02 15:04:05") + ";" + progParams.BackupDate
 	}
 
-	return ""
+	return virtualFilePath + ";" + diff.OldFile.ModTime.Format("2006-01-02 15:04:05") + ";" + diff.OldFile.BackupTag
 }

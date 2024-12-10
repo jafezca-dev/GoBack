@@ -46,6 +46,10 @@ func (mc *MinioClient) CheckBucketConnection() bool {
 }
 
 func (mc *MinioClient) UploadFile(progParams types.ProgParams, fileDiff types.FileDiff) bool {
+	if !fileDiff.IsDiff() {
+		return false
+	}
+
 	_, virtualFilePath := fileDiff.DirPaths(progParams.BasePath)
 	bucketPath := progParams.BackupDate + virtualFilePath
 	bucketPath = strings.ReplaceAll(bucketPath, "\\", "/")
@@ -62,7 +66,6 @@ func (mc *MinioClient) UploadFile(progParams types.ProgParams, fileDiff types.Fi
 		ContentType: contentType,
 	})
 
-	// fmt.Println(info)
 	return true
 }
 
@@ -121,13 +124,11 @@ func (mc *MinioClient) GetLastChanges() (map[string]types.FileChanges, error) {
 		changesData = append(changesData, scanner.Text())
 	}
 
-	//Create new struct
 	oldData := make(map[string]types.FileChanges)
 
 	dateFormat := "2006-01-02 15:04:05"
 
 	for _, change := range changesData {
-		//fmt.Println(change)
 		splitedString := strings.Split(change, ";")
 
 		formatedTime, _ := time.Parse(dateFormat, splitedString[1])
