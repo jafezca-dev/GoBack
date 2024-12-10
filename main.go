@@ -63,6 +63,9 @@ func main() {
 
 	var files []types.FileDiff
 
+	_, _ = storageClient.GetLastChanges()
+	//fmt.Println("Last Changes:", changeData)
+
 	getFiles(progParams.BasePath, &files)
 
 	var csvBuffer bytes.Buffer
@@ -72,12 +75,11 @@ func main() {
 
 		csvLine := file.GetCsvReg(progParams)
 
-		// Escribir la línea en el buffer
 		_, err := csvBuffer.WriteString(csvLine + "\n")
 		if err != nil {
 			panic("Error CSV")
 		}
 	}
 
-	storageClient.UploadCsv(csvBuffer)
+	//storageClient.UploadCsv(csvBuffer)
 }

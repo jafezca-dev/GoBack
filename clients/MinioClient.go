@@ -2,12 +2,14 @@ package clients
 
 import (
 	"GoBack/types"
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -71,4 +73,66 @@ func (mc *MinioClient) UploadCsv(backupInfo bytes.Buffer) bool {
 		})
 
 	return true
+}
+
+func (mc *MinioClient) GetLastChanges() (map[string]types.FileChanges, error) {
+	prefix := "backup_data/"
+
+	backupDataFiles := mc.client.ListObjects(context.Background(), mc.ProgParams.Bucket, minio.ListObjectsOptions{
+		Prefix:    "backup_data/",
+		Recursive: false,
+	})
+
+	responseLen := 0
+	var latestFile minio.ObjectInfo
+
+	for file := range backupDataFiles {
+		responseLen += 1
+		if file.Err != nil {
+			log.Fatalln(file.Err)
+		}
+
+		if file.Key == prefix || file.Key[len(file.Key)-1] == '/' {
+			continue
+		}
+
+		if file.LastModified.After(latestFile.LastModified) {
+
+			latestFile = file
+		}
+	}
+
+	if responseLen == 0 {
+		return nil, fmt.Errorf("no changes found")
+	}
+
+	file, err := mc.client.GetObject(context.Background(), mc.ProgParams.Bucket, latestFile.Key, minio.GetObjectOptions{})
+	defer file.Close()
+
+	if err != nil {
+		return nil, fmt.Errorf("Error getting latest changes for backup data")
+	}
+
+	scanner := bufio.NewScanner(file)
+
+	var changesData []string
+
+	for scanner.Scan() {
+		changesData = append(changesData, scanner.Text())
+	}
+
+	//Create new struct
+	oldData := make(map[string]types.FileChanges)
+
+	dateFormat := "2006-01-02 15:04:05"
+
+	for _, change := range changesData {
+		//fmt.Println(change)
+		splitedString := strings.Split(change, ";")
+
+		formatedTime, _ := time.Parse(dateFormat, splitedString[1])
+		oldData[splitedString[0]] = types.FileChanges{ModTime: formatedTime, BackupTag: splitedString[2]}
+	}
+
+	return oldData, nil
 }
