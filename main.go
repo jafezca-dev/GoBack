@@ -4,7 +4,6 @@ import (
 	"GoBack/clients"
 	"GoBack/types"
 	"bytes"
-	"fmt"
 	"os"
 	"time"
 )
@@ -14,6 +13,8 @@ func getParameters(commandParams []string) types.ProgParams {
 
 	for index, param := range commandParams {
 		switch param {
+		case "full", "incremental":
+			progParams.BackupType = param
 		case "-p":
 			progParams.BasePath = commandParams[index+1]
 		case "-sc":
@@ -79,23 +80,27 @@ func main() {
 
 	getFiles(progParams.BasePath, &files)
 
-	if true {
+	if progParams.BackupType == "incremental" {
 		addOldFiles(progParams, storageClient, &files)
 	}
 
 	var csvBuffer bytes.Buffer
 
+	filesUploadeds := 0
+
 	for _, file := range files {
-		fmt.Println(file.OldFile)
-		//storageClient.UploadFile(progParams, file)
+		if storageClient.UploadFile(file) {
+			filesUploadeds++
+		}
 
 		csvLine := file.GetCsvReg(progParams)
-
 		_, err := csvBuffer.WriteString(csvLine + "\n")
 		if err != nil {
 			panic("Error CSV")
 		}
 	}
 
-	//storageClient.UploadCsv(csvBuffer)
+	if filesUploadeds != 0 {
+		storageClient.UploadCsv(csvBuffer)
+	}
 }
