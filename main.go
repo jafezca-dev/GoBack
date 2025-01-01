@@ -9,24 +9,31 @@ import (
 )
 
 func getParameters(commandParams []string) types.ProgParams {
-	progParams := types.ProgParams{}
+	progParams := types.ProgParams{
+		IgnoreFolders: map[string]bool{},
+		IgnoreFiles:   map[string]bool{},
+	}
 
 	for index, param := range commandParams {
 		switch param {
 		case "full", "incremental":
 			progParams.BackupType = param
-		case "-p":
+		case "--path":
 			progParams.BasePath = commandParams[index+1]
-		case "-sc":
+		case "--client":
 			progParams.StorageClient = commandParams[index+1]
-		case "-b":
+		case "--bucket":
 			progParams.Bucket = commandParams[index+1]
-		case "-ep":
+		case "--endpoint":
 			progParams.Endpoint = commandParams[index+1]
-		case "-ak":
+		case "--accesskey":
 			progParams.AccessKey = commandParams[index+1]
-		case "-sk":
+		case "--secretkey":
 			progParams.SecretKey = commandParams[index+1]
+		case "--ignorefolder":
+			progParams.IgnoreFolders[commandParams[index+1]] = true
+		case "--ignorefile":
+			progParams.IgnoreFiles[commandParams[index+1]] = true
 		}
 	}
 
@@ -44,13 +51,13 @@ func getStorageClient(progParams types.ProgParams) clients.StorageClient {
 	panic("No client selected")
 }
 
-func getFiles(path string, files *[]types.FileDiff) {
+func getFiles(path string, files *[]types.FileDiff, progParams types.ProgParams) {
 	content, _ := os.ReadDir(path)
 
 	for _, file := range content {
-		if file.IsDir() {
-			getFiles(path+"\\"+file.Name(), files)
-		} else {
+		if file.IsDir() && !progParams.IgnoreFolders[file.Name()] {
+			getFiles(path+"\\"+file.Name(), files, progParams)
+		} else if !progParams.IgnoreFiles[file.Name()] {
 			*files = append(*files, types.FileDiff{NewFile: file, FullDirPath: path})
 		}
 	}
@@ -78,7 +85,7 @@ func main() {
 
 	var files []types.FileDiff
 
-	getFiles(progParams.BasePath, &files)
+	getFiles(progParams.BasePath, &files, progParams)
 
 	if progParams.BackupType == "incremental" {
 		addOldFiles(progParams, storageClient, &files)
@@ -86,11 +93,11 @@ func main() {
 
 	var csvBuffer bytes.Buffer
 
-	filesUploadeds := 0
+	filesUploads := 0
 
 	for _, file := range files {
 		if storageClient.UploadFile(file) {
-			filesUploadeds++
+			filesUploads++
 		}
 
 		csvLine := file.GetCsvReg(progParams)
@@ -100,7 +107,7 @@ func main() {
 		}
 	}
 
-	if filesUploadeds != 0 {
+	if filesUploads != 0 {
 		storageClient.UploadCsv(csvBuffer)
 	}
 }

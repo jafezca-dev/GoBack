@@ -2,7 +2,7 @@ module GoBack
 
 go 1.23.3
 
-require github.com/minio/minio-go/v7 v7.0.81
+require github.com/minio/minio-go/v7 v7.0.82
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
