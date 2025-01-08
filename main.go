@@ -93,13 +93,10 @@ func main() {
 
 	var csvBuffer bytes.Buffer
 
-	filesUploads := 0
+	//filesUploads := 0
+	success := storageClient.MultiThreadUpload(files)
 
 	for _, file := range files {
-		if storageClient.UploadFile(file) {
-			filesUploads++
-		}
-
 		csvLine := file.GetCsvReg(progParams)
 		_, err := csvBuffer.WriteString(csvLine + "\n")
 		if err != nil {
@@ -107,7 +104,7 @@ func main() {
 		}
 	}
 
-	if filesUploads != 0 {
+	if success {
 		storageClient.UploadCsv(csvBuffer)
 	}
 }

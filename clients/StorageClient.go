@@ -10,4 +10,5 @@ type StorageClient interface {
 	UploadFile(fileDiff types.FileDiff) bool
 	UploadCsv(backupInfo bytes.Buffer) bool
 	GetLastChanges() (map[string]types.FileChanges, error)
+	MultiThreadUpload([]types.FileDiff) bool
 }

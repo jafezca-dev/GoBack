@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -136,4 +137,28 @@ func (mc *MinioClient) GetLastChanges() (map[string]types.FileChanges, error) {
 	}
 
 	return oldData, nil
+}
+
+func (mc *MinioClient) MultiThreadUpload(files []types.FileDiff) bool {
+	const maxConcurrentUploads = 10
+	semaphore := make(chan struct{}, maxConcurrentUploads)
+	var wg sync.WaitGroup
+	success := true
+
+	for _, fileDiff := range files {
+		wg.Add(1)
+		semaphore <- struct{}{}
+
+		go func(fileDiff types.FileDiff) {
+			defer wg.Done()
+			defer func() { <-semaphore }()
+
+			if !mc.UploadFile(fileDiff) {
+				success = false
+			}
+		}(fileDiff)
+	}
+
+	wg.Wait()
+	return success
 }
