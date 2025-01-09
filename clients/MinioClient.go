@@ -162,3 +162,53 @@ func (mc *MinioClient) MultiThreadUpload(files []types.FileDiff) bool {
 	wg.Wait()
 	return success
 }
+
+func (mc *MinioClient) GetFileChanges(date string) (map[string]types.FileChanges, error) {
+	file, err := mc.client.GetObject(context.Background(), mc.ProgParams.Bucket, "/backup_data/"+date+".csv", minio.GetObjectOptions{})
+	defer file.Close()
+
+	if err != nil {
+		return nil, fmt.Errorf("Error getting latest changes for backup data")
+	}
+
+	scanner := bufio.NewScanner(file)
+
+	var changesData []string
+
+	for scanner.Scan() {
+		changesData = append(changesData, scanner.Text())
+	}
+
+	oldData := make(map[string]types.FileChanges)
+
+	dateFormat := "2006-01-02 15:04:05"
+
+	for _, change := range changesData {
+		splitedString := strings.Split(change, ";")
+
+		formatedTime, _ := time.Parse(dateFormat, splitedString[1])
+		oldData[splitedString[0]] = types.FileChanges{ModTime: formatedTime, BackupTag: splitedString[2]}
+	}
+
+	return oldData, nil
+}
+
+func (mc *MinioClient) CopyRecovery(files map[string]types.FileChanges) {
+	for path, data := range files {
+		fmt.Println(data.BackupTag + path)
+
+		srcOpts := minio.CopySrcOptions{
+			Bucket: mc.ProgParams.Bucket,
+			Object: data.BackupTag + path,
+		}
+
+		dstOpts := minio.CopyDestOptions{
+			Bucket: mc.ProgParams.Bucket,
+			Object: mc.ProgParams.BackupDate + "_recovery" + path,
+		}
+
+		uploadInfo, _ := mc.client.CopyObject(context.Background(), dstOpts, srcOpts)
+
+		fmt.Println(uploadInfo)
+	}
+}

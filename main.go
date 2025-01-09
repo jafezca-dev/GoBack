@@ -16,7 +16,7 @@ func getParameters(commandParams []string) types.ProgParams {
 
 	for index, param := range commandParams {
 		switch param {
-		case "full", "incremental":
+		case "full", "incremental", "recovery":
 			progParams.BackupType = param
 		case "--path":
 			progParams.BasePath = commandParams[index+1]
@@ -34,6 +34,8 @@ func getParameters(commandParams []string) types.ProgParams {
 			progParams.IgnoreFolders[commandParams[index+1]] = true
 		case "--ignorefile":
 			progParams.IgnoreFiles[commandParams[index+1]] = true
+		case "--date":
+			progParams.Date = commandParams[index+1]
 		}
 	}
 
@@ -76,13 +78,7 @@ func addOldFiles(progParams types.ProgParams, storageClient clients.StorageClien
 	}
 }
 
-func main() {
-	commandParams := os.Args[1:]
-	progParams := getParameters(commandParams)
-
-	storageClient := getStorageClient(progParams)
-	storageClient.CheckBucketConnection()
-
+func makeCopy(storageClient clients.StorageClient, progParams types.ProgParams) {
 	var files []types.FileDiff
 
 	getFiles(progParams.BasePath, &files, progParams)
@@ -93,7 +89,6 @@ func main() {
 
 	var csvBuffer bytes.Buffer
 
-	//filesUploads := 0
 	success := storageClient.MultiThreadUpload(files)
 
 	for _, file := range files {
@@ -106,5 +101,24 @@ func main() {
 
 	if success {
 		storageClient.UploadCsv(csvBuffer)
+	}
+}
+
+func makeRecovery(storageClient clients.StorageClient, progParams types.ProgParams) {
+	oldData, _ := storageClient.GetFileChanges(progParams.Date)
+	storageClient.CopyRecovery(oldData)
+}
+
+func main() {
+	commandParams := os.Args[1:]
+	progParams := getParameters(commandParams)
+
+	storageClient := getStorageClient(progParams)
+	storageClient.CheckBucketConnection()
+
+	if progParams.BackupType == "incremental" || progParams.BackupType == "full" {
+		makeCopy(storageClient, progParams)
+	} else if progParams.BackupType == "recovery" {
+		makeRecovery(storageClient, progParams)
 	}
 }
