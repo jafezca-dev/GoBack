@@ -4,6 +4,7 @@ import (
 	"GoBack/clients"
 	"GoBack/types"
 	"bytes"
+	"fmt"
 	"os"
 	"time"
 )
@@ -16,7 +17,7 @@ func getParameters(commandParams []string) types.ProgParams {
 
 	for index, param := range commandParams {
 		switch param {
-		case "full", "incremental", "recovery":
+		case "full", "incremental", "recovery", "list":
 			progParams.BackupType = param
 		case "--path":
 			progParams.BasePath = commandParams[index+1]
@@ -109,6 +110,14 @@ func makeRecovery(storageClient clients.StorageClient, progParams types.ProgPara
 	storageClient.CopyRecovery(oldData)
 }
 
+func getBackupList(storageClient clients.StorageClient, progParams types.ProgParams) {
+	dates := storageClient.GetBackupDates()
+
+	for _, date := range dates {
+		fmt.Println(date)
+	}
+}
+
 func main() {
 	commandParams := os.Args[1:]
 	progParams := getParameters(commandParams)
@@ -120,5 +129,7 @@ func main() {
 		makeCopy(storageClient, progParams)
 	} else if progParams.BackupType == "recovery" {
 		makeRecovery(storageClient, progParams)
+	} else if progParams.BackupType == "list" {
+		getBackupList(storageClient, progParams)
 	}
 }

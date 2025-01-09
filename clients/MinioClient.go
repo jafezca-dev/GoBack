@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -191,6 +192,29 @@ func (mc *MinioClient) GetFileChanges(date string) (map[string]types.FileChanges
 	}
 
 	return oldData, nil
+}
+
+func (mc *MinioClient) GetBackupDates() []string {
+	prefix := "backup_data/"
+
+	backupDataFiles := mc.client.ListObjects(context.Background(), mc.ProgParams.Bucket, minio.ListObjectsOptions{
+		Prefix:    prefix,
+		Recursive: false,
+	})
+
+	dates := []string{}
+
+	for file := range backupDataFiles {
+		if file.Err != nil {
+			log.Fatalln(file.Err)
+		}
+
+		nameWithoutExt := strings.TrimSuffix(filepath.Base(file.Key), filepath.Ext(filepath.Base(file.Key)))
+
+		dates = append(dates, nameWithoutExt)
+	}
+
+	return dates
 }
 
 func (mc *MinioClient) CopyRecovery(files map[string]types.FileChanges) {
