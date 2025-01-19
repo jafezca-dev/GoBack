@@ -13,6 +13,7 @@ func getParameters(commandParams []string) types.ProgParams {
 	progParams := types.ProgParams{
 		IgnoreFolders: map[string]bool{},
 		IgnoreFiles:   map[string]bool{},
+		StorageClient: "minio",
 	}
 
 	for index, param := range commandParams {
