@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -15,6 +16,7 @@ func getParameters(commandParams []string) types.ProgParams {
 		IgnoreFolders: map[string]bool{},
 		IgnoreFiles:   map[string]bool{},
 		StorageClient: "minio",
+		UploadThread:  10,
 	}
 
 	for index, param := range commandParams {
@@ -39,6 +41,12 @@ func getParameters(commandParams []string) types.ProgParams {
 			progParams.IgnoreFiles[commandParams[index+1]] = true
 		case "--date":
 			progParams.Date = commandParams[index+1]
+		case "--uploadthread":
+
+			thread, err := strconv.Atoi(commandParams[index+1])
+			if err == nil {
+				progParams.UploadThread = thread
+			}
 		}
 	}
 
@@ -113,7 +121,7 @@ func makeRecovery(storageClient clients.StorageClient, progParams types.ProgPara
 	storageClient.CopyRecovery(oldData)
 }
 
-func getBackupList(storageClient clients.StorageClient, progParams types.ProgParams) {
+func getBackupList(storageClient clients.StorageClient) {
 	dates := storageClient.GetBackupDates()
 
 	for _, date := range dates {
@@ -133,6 +141,6 @@ func main() {
 	} else if progParams.BackupType == "recovery" {
 		makeRecovery(storageClient, progParams)
 	} else if progParams.BackupType == "list" {
-		getBackupList(storageClient, progParams)
+		getBackupList(storageClient)
 	}
 }

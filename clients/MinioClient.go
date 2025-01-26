@@ -141,7 +141,7 @@ func (mc *MinioClient) GetLastChanges() (map[string]types.FileChanges, error) {
 }
 
 func (mc *MinioClient) MultiThreadUpload(files []types.FileDiff) bool {
-	const maxConcurrentUploads = 10
+	var maxConcurrentUploads = mc.ProgParams.UploadThread
 	semaphore := make(chan struct{}, maxConcurrentUploads)
 	var wg sync.WaitGroup
 	success := true
