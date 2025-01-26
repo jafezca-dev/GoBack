@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -56,6 +57,7 @@ func getStorageClient(progParams types.ProgParams) clients.StorageClient {
 }
 
 func getFiles(path string, files *[]types.FileDiff, progParams types.ProgParams) {
+	path = strings.ReplaceAll(path, "\\", "/")
 	content, _ := os.ReadDir(path)
 
 	for _, file := range content {
